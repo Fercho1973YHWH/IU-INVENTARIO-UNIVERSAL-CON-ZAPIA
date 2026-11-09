@@ -1,0 +1,39 @@
+name: Compilar APK Android
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v4
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias y generar proyecto Android
+        run: |
+          npm install
+          npx cap add android
+          npx cap sync android
+      - name: Instalar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Compilar APK de prueba
+        run: |
+          sed -i -E 's/minSdkVersion = [0-9]+/minSdkVersion = 26/' android/variables.gradle
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: Publicar APK como artefacto descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: IU-Inventario-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
