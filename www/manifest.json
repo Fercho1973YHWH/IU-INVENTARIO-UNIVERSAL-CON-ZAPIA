@@ -1,0 +1,1 @@
+{"name":"IU INVENTARIO UNIVERSAL","short_name":"IU Inventario","description":"Gestión local de inventario","start_url":"./index.html","scope":"./","display":"standalone","orientation":"portrait","background_color":"#ECFDF5","theme_color":"#05AD98","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
