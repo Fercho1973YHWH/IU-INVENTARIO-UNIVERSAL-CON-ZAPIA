@@ -1,0 +1,16 @@
+{
+  "name": "iu-inventario-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Contenedor Android para IU Inventario Universal",
+  "scripts": {
+    "android:sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "6.2.1",
+    "@capacitor/core": "6.2.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "6.2.1"
+  }
+}
