@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +15,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Instalar dependencias y generar proyecto Android
+      - name: Instalar dependencias y generar Android
         run: |
           npm install
           npx cap add android
@@ -25,15 +27,35 @@ jobs:
           java-version: 17
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v4
-      - name: Compilar APK de prueba
+      - name: Compilar APK sin firmar
+        env:
+          VERSION_CODE: ${{ github.run_number }}
         run: |
+          set -euo pipefail
           sed -i -E 's/minSdkVersion = [0-9]+/minSdkVersion = 26/' android/variables.gradle
+          sed -i -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/" android/app/build.gradle
+          grep "versionCode $VERSION_CODE" android/app/build.gradle
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
-      - name: Publicar APK como artefacto descargable
+          ./gradlew assembleRelease
+      - name: Firmar y verificar APK
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE" && test -n "$STORE_PASSWORD"
+          KEYFILE="$RUNNER_TEMP/iu-keystore.p12"
+          printf '%s' "$KEYSTORE" | base64 -d > "$KEYFILE"
+          trap 'rm -f "$KEYFILE"' EXIT
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)
+          INPUT=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
+          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out IU-Inventario-Estable.apk "$RUNNER_TEMP/iu-aligned.apk"
+          "$TOOLS/apksigner" verify --verbose --print-certs IU-Inventario-Estable.apk
+      - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
-          name: IU-Inventario-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: IU-Inventario-Estable
+          path: IU-Inventario-Estable.apk
           if-no-files-found: error
