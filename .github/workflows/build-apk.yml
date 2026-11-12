@@ -21,13 +21,29 @@ jobs:
         run: |
           # Actualizar esta versión únicamente al preparar una nueva versión estable.
           # Las compilaciones de prueba no alteran la secuencia de versiones estables.
-          VERSION_NAME="1.13.03"
+          VERSION_NAME="1.13.04"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
           npx cap add android
           npx cap sync android
           mkdir -p android/app/src/main/res/drawable-nodpi
+          mkdir -p android/app/src/main/java/com/iuinventario/universal/estable
+          cp ExportFilePlugin.java android/app/src/main/java/com/iuinventario/universal/estable/ExportFilePlugin.java
+          python3 - <<'PYPLUGIN'
+          from pathlib import Path
+          import re
+          candidates=list(Path("android/app/src/main/java").rglob("MainActivity.java"))
+          assert len(candidates)==1, "No se encontró MainActivity"
+          p=candidates[0]
+          s=p.read_text()
+          if "registerPlugin(ExportFilePlugin.class)" not in s:
+              s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.ExportFilePlugin;")
+              s=re.sub(r"public class MainActivity extends BridgeActivity \{", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(ExportFilePlugin.class);\n        super.onCreate(savedInstanceState);\n    }", s, count=1)
+          assert "registerPlugin(ExportFilePlugin.class)" in s, "No se pudo registrar ExportFile"
+          p.write_text(s)
+          print(s)
+          PYPLUGIN
           cp www/app-icon.png android/app/src/main/res/drawable-nodpi/iu_launcher.png
           python3 - <<'PYMAN'
           from pathlib import Path
