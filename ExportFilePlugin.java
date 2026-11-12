@@ -25,11 +25,10 @@ public class ExportFilePlugin extends Plugin {
     public void pickFile(PluginCall call) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
+        // MIME filters are inconsistently honored by Android document providers for
+        // exported .html files (often labeled application/octet-stream). Let the
+        // user choose any file; JS validates the extension and actual contents.
         intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel", "text/html", "application/json", "text/csv", "text/*"
-        });
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivityForResult(call, intent, "handlePickResult");
     }
