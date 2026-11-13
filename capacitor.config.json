@@ -1,6 +1,8 @@
 {
-  "appId": "com.iuinventario.universal.estable",
-  "appName": "IU Inventario Estable",
+  "appId": "com.iuinventario.universal.reportesprueba",
+  "appName": "IU Prueba Reportes",
   "webDir": "www",
-  "server": { "androidScheme": "https" }
+  "server": {
+    "androidScheme": "https"
+  }
 }
