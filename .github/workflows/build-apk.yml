@@ -18,7 +18,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.33"
+          VERSION_NAME="1.13.34"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -64,7 +64,7 @@ jobs:
           s=p.read_text()
           s=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
           s=s.replace('<application', '<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"', 1)
-          s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><application', 1)
+          s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><application', 1)
           p.write_text(s)
           PYMAN
       - name: Instalar Java
