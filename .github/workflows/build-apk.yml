@@ -21,12 +21,24 @@ jobs:
         run: |
           # Actualizar esta versión únicamente al preparar una nueva versión estable.
           # Las compilaciones de prueba no alteran la secuencia de versiones estables.
-          VERSION_NAME="1.13.04"
+          VERSION_NAME="1.13.05"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
           npx cap add android
           npx cap sync android
+          mkdir -p android/app/src/main/java/com/iuinventario/universal/estable
+          cp BarcodeScannerPlugin.java android/app/src/main/java/com/iuinventario/universal/estable/BarcodeScannerPlugin.java
+          python3 - <<'PYDEPS'
+          from pathlib import Path
+          p=Path("android/app/build.gradle")
+          s=p.read_text()
+          deps="\n    implementation 'androidx.camera:camera-camera2:1.4.2'\n    implementation 'androidx.camera:camera-lifecycle:1.4.2'\n    implementation 'androidx.camera:camera-view:1.4.2'\n    implementation 'com.google.mlkit:barcode-scanning:17.3.0'\n"
+          if "com.google.mlkit:barcode-scanning" not in s:
+              s=s.replace("dependencies {", "dependencies {"+deps, 1)
+          assert "androidx.camera:camera-camera2:1.4.2" in s and "com.google.mlkit:barcode-scanning:17.3.0" in s
+          p.write_text(s)
+          PYDEPS
           mkdir -p android/app/src/main/res/drawable-nodpi
           mkdir -p android/app/src/main/java/com/iuinventario/universal/estable
           cp ExportFilePlugin.java android/app/src/main/java/com/iuinventario/universal/estable/ExportFilePlugin.java
@@ -40,7 +52,11 @@ jobs:
           if "registerPlugin(ExportFilePlugin.class)" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.ExportFilePlugin;")
               s=re.sub(r"public class MainActivity extends BridgeActivity \{", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(ExportFilePlugin.class);\n        super.onCreate(savedInstanceState);\n    }", s, count=1)
+          if "BarcodeScannerPlugin.class" not in s:
+              s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BarcodeScannerPlugin;")
+              s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BarcodeScannerPlugin.class);")
           assert "registerPlugin(ExportFilePlugin.class)" in s, "No se pudo registrar ExportFile"
+          assert "registerPlugin(BarcodeScannerPlugin.class)" in s, "No se pudo registrar BarcodeScanner"
           p.write_text(s)
           PYPLUGIN
           cp www/app-icon.png android/app/src/main/res/drawable-nodpi/iu_launcher.png
