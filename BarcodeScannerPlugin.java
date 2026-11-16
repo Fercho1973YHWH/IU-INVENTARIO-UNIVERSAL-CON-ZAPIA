@@ -68,7 +68,7 @@ public class BarcodeScannerPlugin extends Plugin {
             requestPermissionForAlias("camera", call, "cameraPermissionResult");
             return;
         }
-        beginScan(call);
+        getActivity().runOnUiThread(() -> beginScan(call));
     }
 
     @PermissionCallback
@@ -77,7 +77,7 @@ public class BarcodeScannerPlugin extends Plugin {
             call.reject("Se necesita permiso de cámara para escanear.");
             return;
         }
-        beginScan(call);
+        getActivity().runOnUiThread(() -> beginScan(call));
     }
 
     private int dp(Context c, float n) { return Math.round(n * c.getResources().getDisplayMetrics().density); }
