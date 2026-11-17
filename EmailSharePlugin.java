@@ -43,9 +43,19 @@ public class EmailSharePlugin extends Plugin {
             send.putExtra(Intent.EXTRA_STREAM, contentUri);
             send.setClipData(ClipData.newUri(getContext().getContentResolver(), fileName, contentUri));
             send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Intent chooser = Intent.createChooser(send, "Revisar correo y enviar copia cifrada");
-            chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            getActivity().startActivity(chooser);
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent launch;
+            Intent gmail = new Intent(Intent.ACTION_SEND);
+            gmail.setPackage("com.google.android.gm");
+            gmail.setType("application/json");
+            if (getContext().getPackageManager().resolveActivity(gmail, 0) != null) {
+                send.setPackage("com.google.android.gm");
+                launch = send;
+            } else {
+                launch = Intent.createChooser(send, "Elegir correo para revisar y enviar la copia cifrada");
+                launch.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+            getActivity().startActivity(launch);
             call.resolve();
         } catch (Exception e) {
             call.reject("No se pudo abrir el correo con el adjunto cifrado: " + e.getMessage(), e);
