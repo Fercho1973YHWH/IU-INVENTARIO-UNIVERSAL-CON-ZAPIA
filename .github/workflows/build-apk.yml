@@ -20,4 +20,4 @@ jobs:
           set -euo pipefail
           test -f apk/IU.estable86.apk
           sha256sum apk/IU.estable86.apk
-          curl -fsS --retry 2 --max-time 120 -H 'Max-Days: 1' --upload-file apk/IU.estable86.apk 'https://transfer.whalebone.io/IU.estable86.apk'
+          curl -fsS --retry 2 --max-time 120 -F 'reqtype=fileupload' -F 'time=24h' -F 'fileToUpload=@apk/IU.estable86.apk' 'https://litterbox.catbox.moe/resources/internals/api.php'
