@@ -18,7 +18,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.37"
+          VERSION_NAME="1.13.43"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -26,6 +26,7 @@ jobs:
           npx cap sync android
           mkdir -p android/app/src/main/java/com/iuinventario/universal/estable
           cp BarcodeScannerPlugin.java android/app/src/main/java/com/iuinventario/universal/estable/BarcodeScannerPlugin.java
+          cp EmailSharePlugin.java android/app/src/main/java/com/iuinventario/universal/estable/EmailSharePlugin.java
           python3 - <<'PYDEPS'
           from pathlib import Path
           p=Path("android/app/build.gradle")
@@ -52,8 +53,12 @@ jobs:
           if "BarcodeScannerPlugin.class" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BarcodeScannerPlugin;")
               s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BarcodeScannerPlugin.class);")
+          if "EmailSharePlugin.class" not in s:
+              s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.EmailSharePlugin;")
+              s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(EmailSharePlugin.class);")
           assert "registerPlugin(ExportFilePlugin.class)" in s, "No se pudo registrar ExportFile"
           assert "registerPlugin(BarcodeScannerPlugin.class)" in s, "No se pudo registrar BarcodeScanner"
+          assert "registerPlugin(EmailSharePlugin.class)" in s, "No se pudo registrar EmailShare"
           p.write_text(s)
           PYPLUGIN
           cp www/app-icon.png android/app/src/main/res/drawable-nodpi/iu_launcher.png
@@ -65,7 +70,19 @@ jobs:
           s=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
           s=s.replace('<application', '<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"', 1)
           s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><application', 1)
+          provider='''<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'''
+          if 'androidx.core.content.FileProvider' not in s:
+              s=s.replace('</application>', provider+'</application>', 1)
           p.write_text(s)
+          paths=Path("android/app/src/main/res/xml/file_paths.xml")
+          paths.parent.mkdir(parents=True,exist_ok=True)
+          if not paths.exists():
+              paths.write_text('<?xml version="1.0" encoding="utf-8"?><paths xmlns:android="http://schemas.android.com/apk/res/android"><external-path name="my_images" path="." /><cache-path name="my_cache_images" path="." /></paths>')
+          else:
+              xml=paths.read_text()
+              if '<cache-path' not in xml:
+                  assert '</paths>' in xml
+                  paths.write_text(xml.replace('</paths>', '<cache-path name="iu_cache" path="." /></paths>'))
           PYMAN
       - name: Instalar Java
         uses: actions/setup-java@v4
