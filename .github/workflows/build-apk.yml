@@ -18,7 +18,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.43"
+          VERSION_NAME="1.13.45"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -27,6 +27,7 @@ jobs:
           mkdir -p android/app/src/main/java/com/iuinventario/universal/estable
           cp BarcodeScannerPlugin.java android/app/src/main/java/com/iuinventario/universal/estable/BarcodeScannerPlugin.java
           cp EmailSharePlugin.java android/app/src/main/java/com/iuinventario/universal/estable/EmailSharePlugin.java
+          cp BackupPasswordVaultPlugin.java android/app/src/main/java/com/iuinventario/universal/estable/BackupPasswordVaultPlugin.java
           python3 - <<'PYDEPS'
           from pathlib import Path
           p=Path("android/app/build.gradle")
@@ -56,9 +57,13 @@ jobs:
           if "EmailSharePlugin.class" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.EmailSharePlugin;")
               s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(EmailSharePlugin.class);")
+          if "BackupPasswordVaultPlugin.class" not in s:
+              s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BackupPasswordVaultPlugin;")
+              s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BackupPasswordVaultPlugin.class);")
           assert "registerPlugin(ExportFilePlugin.class)" in s, "No se pudo registrar ExportFile"
           assert "registerPlugin(BarcodeScannerPlugin.class)" in s, "No se pudo registrar BarcodeScanner"
           assert "registerPlugin(EmailSharePlugin.class)" in s, "No se pudo registrar EmailShare"
+          assert "registerPlugin(BackupPasswordVaultPlugin.class)" in s, "No se pudo registrar BackupPasswordVault"
           p.write_text(s)
           PYPLUGIN
           cp www/app-icon.png android/app/src/main/res/drawable-nodpi/iu_launcher.png
@@ -73,6 +78,8 @@ jobs:
           provider='''<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'''
           if 'androidx.core.content.FileProvider' not in s:
               s=s.replace('</application>', provider+'</application>', 1)
+          if 'com.google.android.gm' not in s:
+              s=s.replace('<application', '<queries><package android:name="com.google.android.gm" /></queries><application', 1)
           p.write_text(s)
           paths=Path("android/app/src/main/res/xml/file_paths.xml")
           paths.parent.mkdir(parents=True,exist_ok=True)
