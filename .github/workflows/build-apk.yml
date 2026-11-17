@@ -19,9 +19,8 @@ jobs:
         env:
           VERSION_CODE: ${{ github.run_number }}
         run: |
-          # Actualizar esta versión únicamente al preparar una nueva versión estable.
-          # Las compilaciones de prueba no alteran la secuencia de versiones estables.
-          VERSION_NAME="1.13.05"
+          set -euo pipefail
+          VERSION_NAME="1.13.06"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -29,6 +28,8 @@ jobs:
           npx cap sync android
           mkdir -p android/app/src/main/java/com/iuinventario/universal/estable
           cp BarcodeScannerPlugin.java android/app/src/main/java/com/iuinventario/universal/estable/BarcodeScannerPlugin.java
+          cp EmailSharePlugin.java android/app/src/main/java/com/iuinventario/universal/estable/EmailSharePlugin.java
+          cp BackupPasswordVaultPlugin.java android/app/src/main/java/com/iuinventario/universal/estable/BackupPasswordVaultPlugin.java
           python3 - <<'PYDEPS'
           from pathlib import Path
           p=Path("android/app/build.gradle")
@@ -55,8 +56,16 @@ jobs:
           if "BarcodeScannerPlugin.class" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BarcodeScannerPlugin;")
               s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BarcodeScannerPlugin.class);")
+          if "EmailSharePlugin.class" not in s:
+              s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.EmailSharePlugin;")
+              s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(EmailSharePlugin.class);")
+          if "BackupPasswordVaultPlugin.class" not in s:
+              s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BackupPasswordVaultPlugin;")
+              s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BackupPasswordVaultPlugin.class);")
           assert "registerPlugin(ExportFilePlugin.class)" in s, "No se pudo registrar ExportFile"
           assert "registerPlugin(BarcodeScannerPlugin.class)" in s, "No se pudo registrar BarcodeScanner"
+          assert "registerPlugin(EmailSharePlugin.class)" in s, "No se pudo registrar EmailShare"
+          assert "registerPlugin(BackupPasswordVaultPlugin.class)" in s, "No se pudo registrar BackupPasswordVault"
           p.write_text(s)
           PYPLUGIN
           cp www/app-icon.png android/app/src/main/res/drawable-nodpi/iu_launcher.png
@@ -67,8 +76,22 @@ jobs:
           s=p.read_text()
           s=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
           s=s.replace('<application', '<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"', 1)
-          s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><application', 1)
+          s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><application', 1)
+          provider='''<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'''
+          if 'androidx.core.content.FileProvider' not in s:
+              s=s.replace('</application>', provider+'</application>', 1)
+          if 'com.google.android.gm' not in s:
+              s=s.replace('<application', '<queries><package android:name="com.google.android.gm" /></queries><application', 1)
           p.write_text(s)
+          paths=Path("android/app/src/main/res/xml/file_paths.xml")
+          paths.parent.mkdir(parents=True,exist_ok=True)
+          if not paths.exists():
+              paths.write_text('<?xml version="1.0" encoding="utf-8"?><paths xmlns:android="http://schemas.android.com/apk/res/android"><external-path name="my_images" path="." /><cache-path name="my_cache_images" path="." /></paths>')
+          else:
+              xml=paths.read_text()
+              if '<cache-path' not in xml:
+                  assert '</paths>' in xml
+                  paths.write_text(xml.replace('</paths>', '<cache-path name="iu_cache" path="." /></paths>'))
           PYMAN
       - name: Instalar Java
         uses: actions/setup-java@v4
@@ -85,13 +108,13 @@ jobs:
           sed -i -E 's/minSdkVersion = [0-9]+/minSdkVersion = 26/' android/variables.gradle
           sed -i -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/" android/app/build.gradle
           sed -i -E "s/versionName \"[^\"]+\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
-          grep "versionCode $VERSION_CODE" android/app/build.gradle
           grep "versionName \"$VERSION_NAME\"" android/app/build.gradle
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
       - name: Firmar y verificar APK
         env:
+          VERSION_CODE: ${{ github.run_number }}
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
@@ -103,11 +126,26 @@ jobs:
           TOOLS=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)
           INPUT=android/app/build/outputs/apk/release/app-release-unsigned.apk
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out IU-Inventario-Estable.apk "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" verify --verbose --print-certs IU-Inventario-Estable.apk
-      - name: Publicar APK
+          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU.estable${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
+          "$TOOLS/apksigner" verify --verbose --print-certs "IU.estable${VERSION_CODE}.apk"
+          # Verify compatibility with the previously published stable before distributing this build.
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/iu-previous-stable.apk" 'https://github.com/Fercho1973YHWH/IU-INVENTARIO-UNIVERSAL-CON-ZAPIA/releases/download/iu-estable-1-13-05/IU.estable60.apk'
+          echo '59de502fccca6603ee48ecee84e502b2a97f40a372089b2218a7d9d4ce50ad78  '"$RUNNER_TEMP/iu-previous-stable.apk" | sha256sum -c -
+          OLD=$("$TOOLS/apksigner" verify --print-certs "$RUNNER_TEMP/iu-previous-stable.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          NEW=$("$TOOLS/apksigner" verify --print-certs "IU.estable${VERSION_CODE}.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          test -n "$OLD" && test "$OLD" = "$NEW"
+          OLD_BADGE=$("$TOOLS/aapt" dump badging "$RUNNER_TEMP/iu-previous-stable.apk" | grep '^package:')
+          NEW_BADGE=$("$TOOLS/aapt" dump badging "IU.estable${VERSION_CODE}.apk" | grep '^package:')
+          echo "$OLD_BADGE"; echo "$NEW_BADGE"
+          echo "$NEW_BADGE" | grep -q "name='com.iuinventario.universal.estable'"
+          echo "$NEW_BADGE" | grep -q "versionName='1.13.06'"
+          OLD_CODE=$(printf '%s' "$OLD_BADGE" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p")
+          NEW_CODE=$(printf '%s' "$NEW_BADGE" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p")
+          test -n "$OLD_CODE" && test -n "$NEW_CODE" && test "$NEW_CODE" -gt "$OLD_CODE"
+          echo 'Verified same signing certificate, stable appId, version and upgrade code.'
+      - name: Publicar APK estable
         uses: actions/upload-artifact@v4
         with:
-          name: IU-Inventario-Estable
-          path: IU-Inventario-Estable.apk
+          name: IU estable${{ github.run_number }}
+          path: IU.estable${{ github.run_number }}.apk
           if-no-files-found: error
