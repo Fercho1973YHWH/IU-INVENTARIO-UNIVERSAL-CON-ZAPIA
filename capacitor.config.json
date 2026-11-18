@@ -1,6 +1,6 @@
 {
-  "appId": "com.iuinventario.universal.busquedapago",
-  "appName": "IU Prueba B\u00fasqueda y Pago",
+  "appId": "com.iuinventario.universal.resumenpagosstock",
+  "appName": "IU Prueba Resumen y Stock",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
