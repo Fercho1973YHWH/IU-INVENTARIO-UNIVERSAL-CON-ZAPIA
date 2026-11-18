@@ -18,7 +18,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.07"
+          VERSION_NAME="1.13.08"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -126,7 +126,7 @@ jobs:
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
-      - name: Publicar APK estable
+      - name: Publicar APK de prueba
         uses: actions/upload-artifact@v4
         with:
           name: IU prueba${{ github.run_number }}
