@@ -1,6 +1,6 @@
 {
-  "appId": "com.iuinventario.universal.estable",
-  "appName": "IU Inventario Estable",
+  "appId": "com.iuinventario.universal.tarjetaresumenprueba",
+  "appName": "IU Prueba Tarjeta y Resumen",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
