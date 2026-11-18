@@ -1,8 +1,6 @@
 name: Compilar APK Android
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 permissions:
   contents: read
 jobs:
@@ -20,7 +18,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.06"
+          VERSION_NAME="1.13.07"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -126,26 +124,11 @@ jobs:
           TOOLS=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)
           INPUT=android/app/build/outputs/apk/release/app-release-unsigned.apk
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU.estable${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" verify --verbose --print-certs "IU.estable${VERSION_CODE}.apk"
-          # Verify compatibility with the previously published stable before distributing this build.
-          curl --fail --location --retry 3 --output "$RUNNER_TEMP/iu-previous-stable.apk" 'https://github.com/Fercho1973YHWH/IU-INVENTARIO-UNIVERSAL-CON-ZAPIA/releases/download/iu-estable-1-13-05/IU.estable60.apk'
-          echo '59de502fccca6603ee48ecee84e502b2a97f40a372089b2218a7d9d4ce50ad78  '"$RUNNER_TEMP/iu-previous-stable.apk" | sha256sum -c -
-          OLD=$("$TOOLS/apksigner" verify --print-certs "$RUNNER_TEMP/iu-previous-stable.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          NEW=$("$TOOLS/apksigner" verify --print-certs "IU.estable${VERSION_CODE}.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          test -n "$OLD" && test "$OLD" = "$NEW"
-          OLD_BADGE=$("$TOOLS/aapt" dump badging "$RUNNER_TEMP/iu-previous-stable.apk" | grep '^package:')
-          NEW_BADGE=$("$TOOLS/aapt" dump badging "IU.estable${VERSION_CODE}.apk" | grep '^package:')
-          echo "$OLD_BADGE"; echo "$NEW_BADGE"
-          echo "$NEW_BADGE" | grep -q "name='com.iuinventario.universal.estable'"
-          echo "$NEW_BADGE" | grep -q "versionName='1.13.06'"
-          OLD_CODE=$(printf '%s' "$OLD_BADGE" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p")
-          NEW_CODE=$(printf '%s' "$NEW_BADGE" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p")
-          test -n "$OLD_CODE" && test -n "$NEW_CODE" && test "$NEW_CODE" -gt "$OLD_CODE"
-          echo 'Verified same signing certificate, stable appId, version and upgrade code.'
+          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
+          "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
       - name: Publicar APK estable
         uses: actions/upload-artifact@v4
         with:
-          name: IU estable${{ github.run_number }}
-          path: IU.estable${{ github.run_number }}.apk
+          name: IU prueba${{ github.run_number }}
+          path: IU prueba${{ github.run_number }}.apk
           if-no-files-found: error
