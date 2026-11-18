@@ -1,6 +1,6 @@
 {
-  "appId": "com.iuinventario.universal.resumenpagosstock",
-  "appName": "IU Prueba Resumen y Stock",
+  "appId": "com.iuinventario.universal.ventasumenseparado",
+  "appName": "IU Prueba Venta y Resumen",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
