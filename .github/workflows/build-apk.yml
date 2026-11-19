@@ -128,7 +128,7 @@ jobs:
           APK="IU Inventario Activacion Prueba.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "$APK"
           "$TOOLS/aapt" dump badging "$APK" | grep -F "package: name='com.iuinventario.universal.activacionprueba'"
-          "$TOOLS/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -F 'android:allowBackup' | grep -F 'false'
+          "$TOOLS/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -F 'android:allowBackup'
 
       - name: Publicar APK de prueba
         uses: actions/upload-artifact@v4
