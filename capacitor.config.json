@@ -1,6 +1,6 @@
 {
-  "appId": "com.iuinventario.universal.estable",
-  "appName": "IU INVENTARIO UNIVERSAL",
+  "appId": "com.iuinventario.universal.prototipoa",
+  "appName": "IU INVENTARIO UNIVERSAL A Prueba",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
