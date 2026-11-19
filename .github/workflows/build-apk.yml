@@ -1,4 +1,4 @@
-name: Compilar APK Android
+name: Compilar IU Prueba de Activación
 on:
   workflow_dispatch:
 permissions:
@@ -18,9 +18,9 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.14"
+          VERSION_NAME="1.14.00"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-          sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
+          sed -i "s/IU · v1.13.14 (prueba)/IU · v$VERSION_NAME (prueba)/g" www/index.html
           npm install
           npx cap add android
           npx cap sync android
@@ -39,7 +39,6 @@ jobs:
           p.write_text(s)
           PYDEPS
           mkdir -p android/app/src/main/res/drawable-nodpi
-          mkdir -p android/app/src/main/java/com/iuinventario/universal/estable
           cp ExportFilePlugin.java android/app/src/main/java/com/iuinventario/universal/estable/ExportFilePlugin.java
           python3 - <<'PYPLUGIN'
           from pathlib import Path
@@ -60,10 +59,10 @@ jobs:
           if "BackupPasswordVaultPlugin.class" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BackupPasswordVaultPlugin;")
               s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BackupPasswordVaultPlugin.class);")
-          assert "registerPlugin(ExportFilePlugin.class)" in s, "No se pudo registrar ExportFile"
-          assert "registerPlugin(BarcodeScannerPlugin.class)" in s, "No se pudo registrar BarcodeScanner"
-          assert "registerPlugin(EmailSharePlugin.class)" in s, "No se pudo registrar EmailShare"
-          assert "registerPlugin(BackupPasswordVaultPlugin.class)" in s, "No se pudo registrar BackupPasswordVault"
+          assert "registerPlugin(ExportFilePlugin.class)" in s
+          assert "registerPlugin(BarcodeScannerPlugin.class)" in s
+          assert "registerPlugin(EmailSharePlugin.class)" in s
+          assert "registerPlugin(BackupPasswordVaultPlugin.class)" in s
           p.write_text(s)
           PYPLUGIN
           cp www/app-icon.png android/app/src/main/res/drawable-nodpi/iu_launcher.png
@@ -74,6 +73,7 @@ jobs:
           s=p.read_text()
           s=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
           s=s.replace('<application', '<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"', 1)
+          s=s.replace('<application', '<application android:allowBackup="false" android:fullBackupContent="false"', 1)
           s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><application', 1)
           provider='''<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'''
           if 'androidx.core.content.FileProvider' not in s:
@@ -124,11 +124,11 @@ jobs:
           TOOLS=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)
           INPUT=android/app/build/outputs/apk/release/app-release-unsigned.apk
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
+          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU Inventario Activacion Prueba.apk" "$RUNNER_TEMP/iu-aligned.apk"
+          "$TOOLS/apksigner" verify --verbose --print-certs "IU Inventario Activacion Prueba.apk"
       - name: Publicar APK de prueba
         uses: actions/upload-artifact@v4
         with:
-          name: IU prueba${{ github.run_number }}
-          path: IU prueba${{ github.run_number }}.apk
+          name: IU Inventario Activacion Prueba
+          path: IU Inventario Activacion Prueba.apk
           if-no-files-found: error
