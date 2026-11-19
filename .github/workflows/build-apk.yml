@@ -49,7 +49,7 @@ jobs:
           s=p.read_text()
           if "registerPlugin(ExportFilePlugin.class)" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.ExportFilePlugin;")
-              s=re.sub(r"public class MainActivity extends BridgeActivity \{", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(ExportFilePlugin.class);\n        super.onCreate(savedInstanceState);\n    }", s, count=1)
+              s=re.sub(r"public class MainActivity extends BridgeActivity\s*\{", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(ExportFilePlugin.class);\n        super.onCreate(savedInstanceState);\n    }", s, count=1)
           if "BarcodeScannerPlugin.class" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BarcodeScannerPlugin;")
               s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BarcodeScannerPlugin.class);")
