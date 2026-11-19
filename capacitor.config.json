@@ -1,6 +1,6 @@
 {
-  "appId": "com.iuinventario.universal.reanudacion",
-  "appName": "IU Prueba Reanudaci\u00f3n",
+  "appId": "com.iuinventario.universal.activacionprueba",
+  "appName": "IU Inventario Activación Prueba",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
