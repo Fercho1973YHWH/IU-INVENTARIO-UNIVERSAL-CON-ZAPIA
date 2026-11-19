@@ -1,6 +1,6 @@
 {
-  "appId": "com.iuinventario.universal.ventasumenseparado",
-  "appName": "IU Prueba Venta y Resumen",
+  "appId": "com.iuinventario.universal.reanudacion",
+  "appName": "IU Prueba Reanudaci\u00f3n",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
