@@ -1,8 +1,6 @@
-name: Compilar APK Android
+name: Compilar IU Prototipo A
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 permissions:
   contents: read
 jobs:
@@ -20,7 +18,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.07"
+          VERSION_NAME="1.14.00"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -51,7 +49,7 @@ jobs:
           s=p.read_text()
           if "registerPlugin(ExportFilePlugin.class)" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.ExportFilePlugin;")
-              s=re.sub(r"public class MainActivity extends BridgeActivity \{", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(ExportFilePlugin.class);\n        super.onCreate(savedInstanceState);\n    }", s, count=1)
+              s=re.sub(r"public class MainActivity extends BridgeActivity \\{", "public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(ExportFilePlugin.class);\n        super.onCreate(savedInstanceState);\n    }", s, count=1)
           if "BarcodeScannerPlugin.class" not in s:
               s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.iuinventario.universal.estable.BarcodeScannerPlugin;")
               s=s.replace("registerPlugin(ExportFilePlugin.class);", "registerPlugin(ExportFilePlugin.class);\n        registerPlugin(BarcodeScannerPlugin.class);")
@@ -73,7 +71,7 @@ jobs:
           import re
           p=Path("android/app/src/main/AndroidManifest.xml")
           s=p.read_text()
-          s=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
+          s=re.sub(r'\\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
           s=s.replace('<application', '<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"', 1)
           s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><application', 1)
           provider='''<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'''
@@ -106,12 +104,12 @@ jobs:
           set -euo pipefail
           sed -i -E 's/minSdkVersion = [0-9]+/minSdkVersion = 26/' android/variables.gradle
           sed -i -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/" android/app/build.gradle
-          sed -i -E "s/versionName \"[^\"]+\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
-          grep "versionName \"$VERSION_NAME\"" android/app/build.gradle
+          sed -i -E "s/versionName \\"[^\\\"]+\\\"/versionName \\"$VERSION_NAME\\\"/" android/app/build.gradle
+          grep "versionName \\"$VERSION_NAME\\\"" android/app/build.gradle
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
-      - name: Firmar y verificar APK
+      - name: Firmar y verificar APK de prueba
         env:
           VERSION_CODE: ${{ github.run_number }}
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -125,11 +123,11 @@ jobs:
           TOOLS=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)
           INPUT=android/app/build/outputs/apk/release/app-release-unsigned.apk
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU INVENTARIO UNIVERSAL.apk" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" verify --verbose --print-certs "IU INVENTARIO UNIVERSAL.apk"
-      - name: Publicar APK estable
+          "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU INVENTARIO UNIVERSAL - Prototipo A.apk" "$RUNNER_TEMP/iu-aligned.apk"
+          "$TOOLS/apksigner" verify --verbose --print-certs "IU INVENTARIO UNIVERSAL - Prototipo A.apk"
+      - name: Publicar APK de prueba
         uses: actions/upload-artifact@v4
         with:
-          name: IU INVENTARIO UNIVERSAL
-          path: IU INVENTARIO UNIVERSAL.apk
+          name: IU Prototipo A
+          path: IU INVENTARIO UNIVERSAL - Prototipo A.apk
           if-no-files-found: error
