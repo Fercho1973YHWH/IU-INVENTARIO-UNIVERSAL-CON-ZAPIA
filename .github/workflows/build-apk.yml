@@ -73,7 +73,7 @@ jobs:
           s=p.read_text()
           s=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
           s=s.replace('<application', '<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"', 1)
-          s=s.replace('<application', '<application android:allowBackup="false" android:fullBackupContent="false"', 1)
+          s=s.replace('<application', '<application android:allowBackup="false"', 1)
           s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><application', 1)
           provider='''<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'''
           if 'androidx.core.content.FileProvider' not in s:
@@ -125,7 +125,11 @@ jobs:
           INPUT=android/app/build/outputs/apk/release/app-release-unsigned.apk
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU Inventario Activacion Prueba.apk" "$RUNNER_TEMP/iu-aligned.apk"
-          "$TOOLS/apksigner" verify --verbose --print-certs "IU Inventario Activacion Prueba.apk"
+          APK="IU Inventario Activacion Prueba.apk"
+          "$TOOLS/apksigner" verify --verbose --print-certs "$APK"
+          "$TOOLS/aapt" dump badging "$APK" | grep -F "package: name='com.iuinventario.universal.activacionprueba'"
+          "$TOOLS/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -F 'android:allowBackup' | grep -F 'false'
+
       - name: Publicar APK de prueba
         uses: actions/upload-artifact@v4
         with:
