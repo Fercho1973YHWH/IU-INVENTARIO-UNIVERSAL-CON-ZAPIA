@@ -36,25 +36,38 @@ jobs:
               s=s.replace("dependencies {", "dependencies {"+deps, 1)
           assert "com.google.mlkit:barcode-scanning:17.3.0" in s
           p.write_text(s)
-          p=next(Path("android/app/src/main/java").rglob("MainActivity.java"))
-          s=p.read_text()
-          imports=[("ExportFilePlugin","ExportFilePlugin.class"),("BarcodeScannerPlugin","BarcodeScannerPlugin.class"),("EmailSharePlugin","EmailSharePlugin.class"),("BackupPasswordVaultPlugin","BackupPasswordVaultPlugin.class")]
-          for cls,_ in imports:
-              line=f"import com.iuinventario.universal.estable.{cls};"
-              if line not in s: s=s.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\\n"+line,1)
-          if "registerPlugin(ExportFilePlugin.class)" not in s:
-              s=re.sub(r"public class MainActivity extends BridgeActivity\\s*\\{", "public class MainActivity extends BridgeActivity {\\n    @Override\\n    public void onCreate(android.os.Bundle savedInstanceState) {\\n        super.onCreate(savedInstanceState);\\n    }",s,count=1)
-          anchor="super.onCreate(savedInstanceState);"
-          calls="\\n        registerPlugin(ExportFilePlugin.class);\\n        registerPlugin(BarcodeScannerPlugin.class);\\n        registerPlugin(EmailSharePlugin.class);\\n        registerPlugin(BackupPasswordVaultPlugin.class);"
-          if "registerPlugin(BackupPasswordVaultPlugin.class)" not in s:
-              s=s.replace(anchor,anchor+calls,1)
-          assert all(f"registerPlugin({cls}.class)" in s for cls,_ in imports)
-          p.write_text(s)
+          import json
+          cfg=json.loads(Path("capacitor.config.json").read_text())
+          package=cfg["appId"]
+          java_dir=Path("android/app/src/main/java")/Path(*package.split("."))
+          java_dir.mkdir(parents=True,exist_ok=True)
+          activity=java_dir/"MainActivity.java"
+          activity.write_text("\n".join([
+              f"package {package};",
+              "import android.os.Bundle;",
+              "import com.getcapacitor.BridgeActivity;",
+              "import com.iuinventario.universal.estable.ExportFilePlugin;",
+              "import com.iuinventario.universal.estable.BarcodeScannerPlugin;",
+              "import com.iuinventario.universal.estable.EmailSharePlugin;",
+              "import com.iuinventario.universal.estable.BackupPasswordVaultPlugin;",
+              "public class MainActivity extends BridgeActivity {",
+              "    @Override",
+              "    public void onCreate(Bundle savedInstanceState) {",
+              "        registerPlugin(ExportFilePlugin.class);",
+              "        registerPlugin(BarcodeScannerPlugin.class);",
+              "        registerPlugin(EmailSharePlugin.class);",
+              "        registerPlugin(BackupPasswordVaultPlugin.class);",
+              "        super.onCreate(savedInstanceState);",
+              "    }",
+              "}",
+          ])+"\n")
+          check=activity.read_text()
+          assert all(f"registerPlugin({name}.class)" in check for name in ["ExportFilePlugin","BarcodeScannerPlugin","EmailSharePlugin","BackupPasswordVaultPlugin"])
           icon=Path("www/app-icon.png")
           assert icon.exists()
           manifest=Path("android/app/src/main/AndroidManifest.xml")
           m=manifest.read_text()
-          m=re.sub(r'\\s+android:(?:icon|roundIcon)="[^"]*"','',m)
+          m=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"','',m)
           m=m.replace('<application','<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"',1)
           manifest.write_text(m)
           res=Path("android/app/src/main/res/drawable-nodpi")
