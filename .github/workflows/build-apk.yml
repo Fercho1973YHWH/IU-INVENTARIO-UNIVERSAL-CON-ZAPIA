@@ -71,7 +71,7 @@ jobs:
           import re
           p=Path("android/app/src/main/AndroidManifest.xml")
           s=p.read_text()
-          s=re.sub(r'\s+android:(?:icon|roundIcon)="[^"]*"', '', s)
+          s=re.sub(r'\s+android:(?:icon|roundIcon|allowBackup|fullBackupContent)="[^"]*"', '', s)
           s=s.replace('<application', '<application android:icon="@drawable/iu_launcher" android:roundIcon="@drawable/iu_launcher"', 1)
           s=s.replace('<application', '<application android:allowBackup="false"', 1)
           s=s.replace('<application', '<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><application', 1)
