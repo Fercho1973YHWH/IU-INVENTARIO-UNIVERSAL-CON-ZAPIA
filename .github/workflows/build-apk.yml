@@ -1,4 +1,4 @@
-name: Compilar APK Android
+name: Compilar IU Prueba 128
 on:
   workflow_dispatch:
 permissions:
@@ -18,9 +18,20 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.14"
+          VERSION_NAME="1.13.15"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-          sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
+          sed -i "s/IU · v1.13.14 (prueba)/IU · v$VERSION_NAME (prueba)/g" www/index.html
+          python3 - <<'PYVERIFY'
+          from pathlib import Path
+          import re, subprocess
+          source=Path("www/index.html").read_text()
+          scripts=re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", source, re.S)
+          assert scripts and "saveStockPriority" in source and "warehouseEditQuantity" in source
+          assert "purchasePriority" in source and "Valor anterior" in source and "calcTitle" in source
+          assert "IU_FIREBASE_CONFIG" not in source and "activationRequests" not in source
+          Path("/tmp/iu-script-check.js").write_text(max(scripts,key=len))
+          subprocess.run(["node","--check","/tmp/iu-script-check.js"],check=True)
+          PYVERIFY
           npm install
           npx cap add android
           npx cap sync android
@@ -126,6 +137,18 @@ jobs:
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
+          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "package: name='com.iuinventario.universal.prioridad128'"
+          python3 - <<'PYAPK'
+          from zipfile import ZipFile
+          from pathlib import Path
+          apk=Path(f"IU prueba{__import__('os').environ['VERSION_CODE']}.apk")
+          with ZipFile(apk) as z:
+              html=z.read("assets/public/index.html").decode()
+              assert "warehouseEditQuantity" in html and "purchasePriority" in html
+              assert "Valor anterior" in html and "calcTitle" in html
+              assert "IU_FIREBASE_CONFIG" not in html and "activationRequests" not in html
+          print("APK contains requested features and no Firebase authorization code")
+          PYAPK
       - name: Publicar APK de prueba
         uses: actions/upload-artifact@v4
         with:
