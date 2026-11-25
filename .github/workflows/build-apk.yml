@@ -137,7 +137,7 @@ jobs:
           "$TOOLS/zipalign" -f -p 4 "$INPUT" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
-          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "package: name='com.iuinventario.universal.prioridad128'"
+          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "package: name='com.iuinventario.universal.reportefix128'"
           python3 - <<'PYAPK'
           from zipfile import ZipFile
           from pathlib import Path
