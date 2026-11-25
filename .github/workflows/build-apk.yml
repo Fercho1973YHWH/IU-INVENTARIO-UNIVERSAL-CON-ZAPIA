@@ -28,6 +28,11 @@ jobs:
           scripts=re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", source, re.S)
           assert scripts and "saveStockPriority" in source and "warehouseEditQuantity" in source
           assert "purchasePriority" in source and "Valor anterior" in source and "calcTitle" in source
+          assert "grossProfitMonth" in source and "monthPayablePayments" in source
+          assert "reportIncludePriority" in source and "reportIncludeBoxes" in source and "reportIncludeSection" in source
+          assert "reportIncludeDetails" not in source
+          assert "priorityRow.classList.toggle('hidden',stockFilter!=='low'" in source
+          assert "IU · v1.13.15 (prueba)" in source
           assert "IU_FIREBASE_CONFIG" not in source and "activationRequests" not in source
           Path("/tmp/iu-script-check.js").write_text(max(scripts,key=len))
           subprocess.run(["node","--check","/tmp/iu-script-check.js"],check=True)
@@ -138,6 +143,7 @@ jobs:
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
           "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "package: name='com.iuinventario.universal.reportefix128'"
+          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "versionName='1.13.15'"
           python3 - <<'PYAPK'
           from zipfile import ZipFile
           from pathlib import Path
@@ -146,6 +152,10 @@ jobs:
               html=z.read("assets/public/index.html").decode()
               assert "warehouseEditQuantity" in html and "purchasePriority" in html
               assert "Valor anterior" in html and "calcTitle" in html
+              assert "grossProfitMonth" in html and "monthPayablePayments" in html
+              assert "reportIncludePriority" in html and "reportIncludeBoxes" in html and "reportIncludeSection" in html
+              assert "reportIncludeDetails" not in html
+              assert "IU · v1.13.15 (prueba)" in html
               assert "IU_FIREBASE_CONFIG" not in html and "activationRequests" not in html
           print("APK contains requested features and no Firebase authorization code")
           PYAPK
