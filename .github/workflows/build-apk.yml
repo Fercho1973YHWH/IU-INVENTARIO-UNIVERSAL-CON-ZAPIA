@@ -20,7 +20,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.08"
+          VERSION_NAME="1.13.09"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sed -i "s/IU · v1.3.0/IU · v$VERSION_NAME/g; s/IU Inventario · v1.3.0/IU Inventario · v$VERSION_NAME/g" www/index.html
           npm install
@@ -129,19 +129,23 @@ jobs:
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU INVENTARIO UNIVERSAL.apk" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "IU INVENTARIO UNIVERSAL.apk"
           "$TOOLS/aapt" dump badging "IU INVENTARIO UNIVERSAL.apk" | grep -F "package: name='com.iuinventario.universal.estable'"
-          "$TOOLS/aapt" dump badging "IU INVENTARIO UNIVERSAL.apk" | grep -F "versionName='1.13.08'"
+          "$TOOLS/aapt" dump badging "IU INVENTARIO UNIVERSAL.apk" | grep -F "versionName='1.13.09'"
           python3 - <<'PYAPK'
           from zipfile import ZipFile
           with ZipFile("IU INVENTARIO UNIVERSAL.apk") as z:
               html=z.read("assets/public/index.html").decode()
-              assert "IU · v1.13.08" in html
+              assert "IU · v1.13.09" in html
               assert "warehouseEditQuantity" in html and "purchasePriority" in html
               assert "priorityHigh" in html and "Prioridad baja primero" in html
               assert "Sección de la caja:" in html and "calcPreviousValue" in html
+              assert "grossProfitMonth" in html and "monthPayablePayments" in html
+              assert "reportIncludePriority" in html and "reportIncludeBoxes" in html and "reportIncludeSection" in html
+              assert "reportIncludeDetails" not in html
+              assert "hiddenLowStockColumns" in html and "priorityRow.classList.toggle" in html
               assert "IU_FIREBASE_CONFIG" not in html and "activationRequests" not in html
               icon=z.read("assets/public/app-icon.png")
               assert len(icon)>1000
-          print("Stable APK verified: v1.13.08, intended features, approved icon and no Firebase activation")
+          print("Stable APK verified: v1.13.09, intended features, approved icon and no Firebase activation")
           PYAPK
       - name: Publicar APK estable
         uses: actions/upload-artifact@v4
