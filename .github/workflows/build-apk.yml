@@ -40,6 +40,9 @@ jobs:
           assert "stock-minimum" in source and "En cajas:" in source and "<b class=\"stock-number\"></b>" not in source
           assert "#salesList .details,#purchaseList .details,#list .details" in source
           assert "IU · v1.13.15 (prueba)" in source
+          assert "grid-template-columns:minmax(0,1fr) minmax(185px,200px)" in source
+          assert "max-width:200px" in source and "width:100%;min-width:0;min-height:38px" in source
+          assert source.index("<b>Stock mínimo:</b>") < source.index("<b>Stock actual:</b>")
           assert "IU_FIREBASE_CONFIG" not in source and "activationRequests" not in source
           Path("/tmp/iu-script-check.js").write_text(max(scripts,key=len))
           subprocess.run(["node","--check","/tmp/iu-script-check.js"],check=True)
@@ -169,6 +172,9 @@ jobs:
               assert "stock-minimum" in html and "En cajas:" in html and "<b class=\"stock-number\"></b>" not in html
               assert "#salesList .details,#purchaseList .details,#list .details" in html
               assert "IU · v1.13.15 (prueba)" in html
+              assert "grid-template-columns:minmax(0,1fr) minmax(185px,200px)" in html
+              assert "max-width:200px" in html
+              assert html.index("<b>Stock mínimo:</b>") < html.index("<b>Stock actual:</b>")
               assert "IU_FIREBASE_CONFIG" not in html and "activationRequests" not in html
           print("APK contains requested features and no Firebase authorization code")
           PYAPK
