@@ -32,6 +32,9 @@ jobs:
           assert "reportIncludePriority" in source and "reportIncludeBoxes" in source and "reportIncludeSection" in source
           assert "reportIncludeDetails" not in source
           assert "priorityRow.classList.toggle('hidden',stockFilter!=='low'" in source
+          assert "automaticStockPriority" in source
+          assert "missingPercent<=33.334?'baja':missingPercent<=66.67?'media':'alta'" in source
+          assert "Prioridad calculada automáticamente" in source
           assert "IU · v1.13.15 (prueba)" in source
           assert "IU_FIREBASE_CONFIG" not in source and "activationRequests" not in source
           Path("/tmp/iu-script-check.js").write_text(max(scripts,key=len))
@@ -155,6 +158,9 @@ jobs:
               assert "grossProfitMonth" in html and "monthPayablePayments" in html
               assert "reportIncludePriority" in html and "reportIncludeBoxes" in html and "reportIncludeSection" in html
               assert "reportIncludeDetails" not in html
+              assert "automaticStockPriority" in html
+              assert "missingPercent<=33.334?'baja':missingPercent<=66.67?'media':'alta'" in html
+              assert "Prioridad calculada automáticamente" in html
               assert "IU · v1.13.15 (prueba)" in html
               assert "IU_FIREBASE_CONFIG" not in html and "activationRequests" not in html
           print("APK contains requested features and no Firebase authorization code")
