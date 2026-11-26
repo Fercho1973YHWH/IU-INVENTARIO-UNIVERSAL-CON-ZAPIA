@@ -44,7 +44,9 @@ jobs:
           assert "$('reportXlsx').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
           assert "$('reportHtml').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
           assert "$('reportCsv').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
-          assert "reportDetailExportRows()" not in source[source.index("$('reportXlsx').onclick="):source.index("$('reportPrint').onclick=")]
+          assert "$('reportPrint').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
+          assert "reportExportDocumentHtml(headers,rows)" in source
+          assert "reportDetailExportRows()" not in source[source.index("$('reportXlsx').onclick="):source.index("$('reportType').onchange=")]
           assert "monthPayableAbonos(month)" in source
           assert "function monthPayableAbonos(month){return supplierMovements.filter(m=>(m.accountType||'payable')==='payable'&&String(m.date||'').slice(0,7)===month&&Number(m.amount)<0)" in source
           assert "grossProfitMonth').textContent=money(monthGross-monthPayablePayments)" in source
@@ -183,6 +185,7 @@ jobs:
               assert "visibleReportExportSnapshot" in html
               assert "function monthPayableAbonos(month)" in html
               assert "monthPayablePayments=monthPayableAbonos(month)" in html
+              assert "reportPrint').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in html
               assert "grid-template-columns:minmax(0,1fr) minmax(185px,200px)" in html
               assert "max-width:200px" in html
               assert html.index("<b>Stock mínimo:</b>") < html.index("<b>Stock actual:</b>")
