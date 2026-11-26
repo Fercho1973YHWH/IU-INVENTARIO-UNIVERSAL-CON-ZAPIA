@@ -18,9 +18,9 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.15"
+          VERSION_NAME="1.13.16"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-          sed -i "s/IU · v1.13.14 (prueba)/IU · v$VERSION_NAME (prueba)/g" www/index.html
+          sed -i "s/IU · v1.13.15 (prueba)/IU · v$VERSION_NAME (prueba)/g" www/index.html
           python3 - <<'PYVERIFY'
           from pathlib import Path
           import re, subprocess
@@ -39,7 +39,15 @@ jobs:
           assert "stockWithinPriorityBand" in source and "prioritySelect.onchange=()=>saveStockPriority" in source
           assert "stock-minimum" in source and "En cajas:" in source and "<b class=\"stock-number\"></b>" not in source
           assert "#salesList .details,#purchaseList .details,#list .details" in source
-          assert "IU · v1.13.15 (prueba)" in source
+          assert "IU · v1.13.16 (prueba)" in source
+          assert "visibleReportExportSnapshot" in source
+          assert "$('reportXlsx').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
+          assert "$('reportHtml').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
+          assert "$('reportCsv').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
+          assert "reportDetailExportRows()" not in source[source.index("$('reportXlsx').onclick="):source.index("$('reportPrint').onclick=")]
+          assert "monthPayableAbonos(month)" in source
+          assert "function monthPayableAbonos(month){return supplierMovements.filter(m=>(m.accountType||'payable')==='payable'&&String(m.date||'').slice(0,7)===month&&Number(m.amount)<0)" in source
+          assert "grossProfitMonth').textContent=money(monthGross-monthPayablePayments)" in source
           assert "grid-template-columns:minmax(0,1fr) minmax(185px,200px)" in source
           assert "max-width:200px" in source and "width:100%;min-width:0;min-height:38px" in source
           assert source.index("<b>Stock mínimo:</b>") < source.index("<b>Stock actual:</b>")
@@ -153,7 +161,7 @@ jobs:
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
           "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "package: name='com.iuinventario.universal.reportefix128'"
-          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "versionName='1.13.15'"
+          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "versionName='1.13.16'"
           python3 - <<'PYAPK'
           from zipfile import ZipFile
           from pathlib import Path
@@ -171,7 +179,10 @@ jobs:
               assert "stockWithinPriorityBand" in html and "prioritySelect.onchange=()=>saveStockPriority" in html
               assert "stock-minimum" in html and "En cajas:" in html and "<b class=\"stock-number\"></b>" not in html
               assert "#salesList .details,#purchaseList .details,#list .details" in html
-              assert "IU · v1.13.15 (prueba)" in html
+              assert "IU · v1.13.16 (prueba)" in html
+              assert "visibleReportExportSnapshot" in html
+              assert "function monthPayableAbonos(month)" in html
+              assert "monthPayablePayments=monthPayableAbonos(month)" in html
               assert "grid-template-columns:minmax(0,1fr) minmax(185px,200px)" in html
               assert "max-width:200px" in html
               assert html.index("<b>Stock mínimo:</b>") < html.index("<b>Stock actual:</b>")
