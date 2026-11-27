@@ -18,9 +18,9 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION_NAME="1.13.17"
+          VERSION_NAME="1.13.15"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-          sed -i "s/IU · v1.13.16 (prueba)/IU · v$VERSION_NAME (prueba)/g" www/index.html
+          sed -i "s/IU · v1.13.15 (prueba)/IU · v$VERSION_NAME (prueba)/g" www/index.html
           python3 - <<'PYVERIFY'
           from pathlib import Path
           import re, subprocess
@@ -33,20 +33,19 @@ jobs:
           assert "reportIncludeDetails" not in source
           assert "priorityRow.classList.toggle('hidden',stockFilter!=='low'" in source
           assert "automaticStockPriority" in source
-          assert "extraPercent<10)return 'alta';if(extraPercent<=50)return 'media';return 'baja'" in source
+          assert "extraPercent<5)return 'alta';if(extraPercent<=25)return 'media';return 'baja'" in source
+          assert "stock<=minimum*1.5" in source
+          assert "(reportType!=='lowStock'||stockWithinPriorityBand(p))" in source
+          assert "priority:selectedStockPriority(p)" in source
+          assert "priorityFor=r=>{const p=productFor(r);return p?selectedStockPriority(p):'media'}" in source
+          assert "if($('reportsView'))renderReports()" in source
           assert "purchasePriorityManual===true" in source and "option value=\"auto\">Automática" in source
           assert "Prioridad calculada automáticamente" not in source
           assert "stockWithinPriorityBand" in source and "prioritySelect.onchange=()=>saveStockPriority" in source
           assert "stock-minimum" in source and "En cajas:" in source and "<b class=\"stock-number\"></b>" not in source
           assert "#salesList .details,#purchaseList .details,#list .details" in source
-          assert "IU · v1.13.17 (prueba)" in source
-          assert "IU Inventario · v1.13.17 (prueba)" in source
-          assert "CASH_DAYS='cashDays',menus=" in source and "indexedDB.open(DB,6)" in source
-          assert "keyPath:'date'" in source and "cashDays:'date'" in source
-          assert "function cashDayBreakdown(date,record)" in source
-          assert "function saveCashOpening()" in source and "function addCashMovement()" in source and "function saveCashClose()" in source
-          assert "Informes guardados por día" in source and "report={...values,counted,savedAt:" in source
-          assert "informes diarios de caja" in source and "raw.stores[CASH_DAYS]=[]" in source
+          assert "IU · v1.13.15 (prueba)" in source
+          assert "IU Inventario · v1.13.15 (prueba)" in source
           assert "visibleReportExportSnapshot" in source
           assert "$('reportXlsx').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
           assert "$('reportHtml').onclick=()=>{const {headers,rows}=visibleReportExportSnapshot()" in source
@@ -170,7 +169,7 @@ jobs:
           "$TOOLS/apksigner" sign --ks "$KEYFILE" --ks-type PKCS12 --ks-key-alias iuinventario --ks-pass env:STORE_PASSWORD --key-pass env:STORE_PASSWORD --out "IU prueba${VERSION_CODE}.apk" "$RUNNER_TEMP/iu-aligned.apk"
           "$TOOLS/apksigner" verify --verbose --print-certs "IU prueba${VERSION_CODE}.apk"
           "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "package: name='com.iuinventario.universal.reportefix128'"
-          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "versionName='1.13.17'"
+          "$TOOLS/aapt" dump badging "IU prueba${VERSION_CODE}.apk" | grep -F "versionName='1.13.15'"
           python3 - <<'PYAPK'
           from zipfile import ZipFile
           from pathlib import Path
@@ -183,14 +182,16 @@ jobs:
               assert "reportIncludePriority" in html and "reportIncludeBoxes" in html and "reportIncludeSection" in html
               assert "reportIncludeDetails" not in html
               assert "automaticStockPriority" in html
-              assert "extraPercent<10)return 'alta';if(extraPercent<=50)return 'media';return 'baja'" in html
+              assert "extraPercent<5)return 'alta';if(extraPercent<=25)return 'media';return 'baja'" in html
+              assert "stock<=minimum*1.5" in html
+              assert "priority:selectedStockPriority(p)" in html
+              assert "if($('reportsView'))renderReports()" in html
               assert "purchasePriorityManual===true" in html and "option value=\"auto\">Automática" in html
               assert "stockWithinPriorityBand" in html and "prioritySelect.onchange=()=>saveStockPriority" in html
               assert "stock-minimum" in html and "En cajas:" in html and "<b class=\"stock-number\"></b>" not in html
               assert "#salesList .details,#purchaseList .details,#list .details" in html
-              assert "IU · v1.13.17 (prueba)" in html
-              assert "IU Inventario · v1.13.17 (prueba)" in html
-              assert "cashDayBreakdown" in html and "saveCashClose" in html and "cashDays" in html
+              assert "IU · v1.13.15 (prueba)" in html
+              assert "IU Inventario · v1.13.15 (prueba)" in html
               assert "visibleReportExportSnapshot" in html
               assert "function monthPayableAbonos(month)" in html
               assert "monthPayablePayments=monthPayableAbonos(month)" in html
